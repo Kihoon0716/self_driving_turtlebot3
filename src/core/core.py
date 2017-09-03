@@ -7,14 +7,30 @@ from std_msgs.msg import String
 from self_driving_turtlebot3.msg import Traffic_light
 from sensor_msgs.msg import CompressedImage
 from sensor_msgs.msg import Image
+from std_msgs.msg import Float32MultiArray
 from self_driving_turtlebot3.msg import Stop_bar
 from sensor_msgs.msg import LaserScan
 from cv_bridge import CvBridge, CvBridgeError
 import os
 import threading
 
+def converting_to_maze_mode():
+    os.system("rosnode kill calibration_and_birdeyeview")
+    os.system("rosnode kill car_barrier_detection")
+    os.system("rosnode kill lane_follower")
+    os.system("rosnode kill parking")
+    os.system("rosnode kill traffic_light2")
+    os.system("rosnode kill usb_cam")
+    thread = threading.Thread(target=os.system, args=('roslaunch self_driving_turtlebot3 mode_maze.launch',))
+    thread.setDaemon(True)
+    thread.start()
 
-
+def converting_to_tracer_mode():
+    os.system("rosnode kill maze_pathfinder")
+    os.system("rosnode kill turtlebot3_slam_gmapping")
+    thread = threading.Thread(target=os.system, args=('roslaunch self_driving_turtlebot3 mode_tracer.launch',))
+    thread.setDaemon(True)
+    thread.start()
 
 class Core():
     def __init__(self):
@@ -32,6 +48,9 @@ class Core():
         self._sub_3 = rospy.Subscriber('/traffic_light', Traffic_light, self.receiver_traffic_light, queue_size=1)
         self._sub_4 = rospy.Subscriber('/parking', String, self.receiver_parking, queue_size=1)
         self._sub_5 = rospy.Subscriber('/scan', LaserScan, self.callback2, queue_size=1)
+        self._sub_6 = rospy.Subscriber('/maze', String, self.receiver_maze, queue_size=1)
+        self._sub_7 = rospy.Subscriber('/signal_sign', String, self.receiver_signal_sign, queue_size=1)
+        self._sub_8 = rospy.Subscriber('/objects', Float32MultiArray, self.receiver_object_find, queue_size=1)
         self._pub_1 = rospy.Publisher('/command_lane_follower', String, queue_size=1)
 
         self._cv_bridge = CvBridge()
@@ -57,7 +76,14 @@ class Core():
 
         self.parking = None
 
+        self.maze = None
+
+        self.signal_sign = None
+
+        self.find_object = None
+
         self.wall_detected = None
+        self.count = 0
 
     def monitoring(self, image_msg):
 
@@ -70,11 +96,10 @@ class Core():
         if self.wall_detected == "yes":
             mean = np.mean(self.image)
             if mean < 30:
-                thread = threading.Thread(target=os.system, args=('roslaunch self_driving_turtlebot3 self_driving2.launch',))
-                thread.setDaemon(True)
-                thread.start()
-            elif mean < 30:
-                os.system("rosnode kill lane_follower")
+                self.maze = "maze_start"
+                self.commander()
+                converting_to_maze_mode()
+
 
         if self.traffic_light_detected == 'yes':
             #if self.image_show == 'yes':
@@ -91,10 +116,11 @@ class Core():
             cv2.imshow("monitoring", self.image), cv2.waitKey(1)
 
     def commander(self):
-        if self.stop_bar_state == 'stop' or self.parking == 'parking_lot_detected' or (self.traffic_light_color == 'red' and self.traffic_light_x > 500):
+
+        if self.stop_bar_state == 'stop' or self.parking == 'parking_lot_detected' or (self.traffic_light_color == 'red' and self.traffic_light_x > 500) or self.maze == "maze_start":
             self.state = 'stop'
 
-        elif self.stop_bar_state == 'slowdown':
+        elif self.stop_bar_state == 'slowdown' or self.signal_sign == 'WARNING' or self.find_object > 0:
             self.state = 'slowdown'
 
         else:
@@ -119,6 +145,24 @@ class Core():
         self.commander()
     def receiver_parking(self, parking):
         self.parking = parking.data
+        self.commander()
+
+    def receiver_maze(self, maze):
+        self.maze = maze.data
+        if self.maze == "maze_end":
+            converting_to_tracer_mode()
+
+    def receiver_signal_sign(self, signal_sign):
+        self.signal_sign = signal_sign.data
+        self.commander()
+
+    def receiver_object_find(self, find_object):
+        if len(find_object.data) > 0:
+            self.find_object = 10
+            print 'yes'
+        elif self.find_object > 0:
+                self.find_object -= 1
+        print self.find_object
         self.commander()
 
     def draw_traffic_light(self):

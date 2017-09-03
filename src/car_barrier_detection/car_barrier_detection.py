@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 from sensor_msgs.msg import CompressedImage
 import math
-from self_driving_turtlebot3.msg import Stop_barOrientation
+from self_driving_turtlebot3.msg import Stop_bar
 from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import Image
 
