@@ -45,12 +45,12 @@ Last process is testing linearity and distance equality of 3 dots
  * test_linearity(point1, point2, point3) # testing whether 3 dots are located linearly
  * test_distance_equality(point1, point2, point3) # testing whether distance between point1 and point2 is same with distance between point2 and point3
 
-## Calculating angle and distance from your 
+## Calculating angle and distance from your robot
  1.  finding two outer points and drawing blue line
  2.  calculating distance between robot and stop bar using the length of blue line
  3.  calculating angle of line using atan2 function
 
-<a href="https://www.youtube.com/embed/pVKA_5ddetc" target="_blank"><img src="http://img.youtube.com/vi/7qObtG6nZL0/0.jpg" 
+<a href="https://www.youtube.com/embed/7qObtG6nZL0" target="_blank"><img src="http://img.youtube.com/vi/7qObtG6nZL0/0.jpg" 
 alt="circuit" width="480" height="260" border="10" /></a>
 
 
