@@ -51,9 +51,9 @@ Last process is testing linearity and distance equality of 3 dots
  3.  calculating angle of line using atan2 function
 
 <a href="https://www.youtube.com/embed/7qObtG6nZL0" target="_blank"><img src="http://img.youtube.com/vi/7qObtG6nZL0/0.jpg" 
-alt="circuit" width="480" height="260" border="10" (click for full video) /></a>
+alt="circuit" width="480" height="260" border="10" /></a>
 
 
 ## Result
 <a href="https://www.youtube.com/embed/pVKA_5ddetc" target="_blank"><img src="http://img.youtube.com/vi/pVKA_5ddetc/0.jpg" 
-alt="circuit" width="480" height="260" border="10" (click for full video) /></a>
+alt="circuit" width="480" height="260" border="10" /></a>
