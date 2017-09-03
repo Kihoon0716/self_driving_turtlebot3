@@ -101,7 +101,7 @@ class TrafficSignDetection():
         init_op = tf.global_variables_initializer()
         self.sess.run(init_op)
         self.saver = tf.train.Saver()
-        self.saver.restore(self.sess, "model.ckpt")
+        self.saver.restore(self.sess, "/home/kihoon/catkin_ws/src/self_driving_turtlebot3/src/signal_sign_detection/model/model.ckpt")
 
         self.selecting_sub_image = "raw" # you can choose image type "compressed", "raw"
         # subscribers
@@ -111,7 +111,7 @@ class TrafficSignDetection():
             self._sub = rospy.Subscriber('/image_calibrated', Image, self.callback, queue_size=1)
 
         # publishers
-        self._pub = rospy.Publisher('/traffic_sign', String, queue_size=1)
+        self._pub = rospy.Publisher('/signal_sign', String, queue_size=1)
 
         self._cv_bridge = CvBridge()
         self.softmax_threshold = 0.9
@@ -187,6 +187,6 @@ class TrafficSignDetection():
         rospy.spin()
 
 if __name__ == '__main__':
-    rospy.init_node('traffic_sign_dection')
+    rospy.init_node('signal_sign_dection')
     traffic_sign_dection = TrafficSignDetection()
     traffic_sign_dection.main()

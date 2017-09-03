@@ -72,10 +72,21 @@ In the first line findhomography function create homography matrix using pts_src
 I made gui track bar to easily move 4 points of original image and threshold value of binary image.
 So you can easily change parameters for your robot!
 
-## Result
+<p align="center">
+ <img src ="https://github.com/Kihoon0716/self_driving-loading/blob/master/img/9.png?raw=true" width="50%" height="50%"/>
+</p>
 
-image1, 2, 3
-## Publishing topics - CVBridge(non-compressed) and encode(compressed)
+## Result
+<p align="center">
+ <img src ="https://github.com/Kihoon0716/self_driving-loading/blob/master/img/4.png?raw=true" width="30%" height="30%"/>
+<img src ="https://github.com/Kihoon0716/self_driving-loading/blob/master/img/2.png?raw=true" width="30%" height="30%"/>
+<img src ="https://github.com/Kihoon0716/self_driving-loading/blob/master/img/3.png?raw=true" width="30%" height="30%"/>
+</p>
+
+ * Original image
+ * Calibrated image
+ * Bird's eye view
+
 ```python
     # publishing calbrated and Bird's eye view as compressed image
     msg_calibration = CompressedImage()

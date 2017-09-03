@@ -44,7 +44,7 @@ class Lane_tracer():
     def __init__(self):
 
         self.selecting_sub_image = "raw"  # you can choose image type "compressed", "raw"
-        self.image_show = 'off'  # monitering image
+        self.image_show = 'on'  # monitering image
 
         # subscribers
         if self.selecting_sub_image == "compressed":
