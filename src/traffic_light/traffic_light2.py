@@ -170,10 +170,10 @@ class Traffic_light_detection():
             point_low = int(keypts[i].pt[1])
             print keypts[i].pt
             #image = cv2.circle(frame, (point_col, point_low), 3, (0, 255, 0), thickness=5,lineType=8, shift=0)
-            low_start = point_low - self.black_color_box_size['red']['top']
-            low_end = point_low + self.black_color_box_size['red']['bottom']
-            col_start = point_col - self.black_color_box_size['red']['w']
-            col_end = point_col + self.black_color_box_size['red']['w']
+            low_start = point_low - self.black_color_box_size[self.detecting_color]['top']
+            low_end = point_low + self.black_color_box_size[self.detecting_color]['bottom']
+            col_start = point_col - self.black_color_box_size[self.detecting_color]['w']
+            col_end = point_col + self.black_color_box_size[self.detecting_color]['w']
             image_crop = frame[low_start:low_end, col_start:col_end]
             image_crop_gray = cv2.cvtColor(image_crop, cv2.COLOR_RGB2GRAY)
             ret, image_crop_binary = cv2.threshold(image_crop_gray, 50, 255, cv2.THRESH_BINARY_INV)
