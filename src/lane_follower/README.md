@@ -94,3 +94,14 @@ Lastly, we should consider the current direction of robot which is theta_current
 There is some situation like when our robot turn right and can not see any lane because our ROI if right side. So, if there is no lane detected our robot will turn right until he will find lane.
 
 
+## Try more!!
+In this derectory I uploaded 3 other files. Be carefull! Only "lane_follower_AI.py" is ROS node others will be used to train neural network.
+ * lane_follower_AI.py
+ * lane_follower_AI_collect_data.py
+ * train.py
+
+These are what I made lane_follower version using tensorflow.
+Before trying this you should install tensorflow in [here](https://www.tensorflow.org/install/)
+1. By using "lane_follower_IA_collect_data.py" you can collect training data. Inputs are cmd_vel and Image topics and it will create text file containing image array and related angular velocity.
+2. Secondly, using "train.py", you can train the neural network and this will create trained model data which will be used in next stage.
+3. Finally, run the "lane_follower_AI.py" node and before doing this you should chomd +x model.ckpt in derectory saved the files.

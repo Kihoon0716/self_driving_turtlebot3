@@ -83,3 +83,5 @@ alt="circuit" width="480" height="260" border="10" /></a>
 		message = sign[index]
 		self._pub.publish(message)
 ```
+## Try more!!
+Our algorithm is very accurate if the signal sign is rectangular shape but can not be used if other shape. You can download open source from [here!](http://wiki.ros.org/find_object_2d) and try this. I made "core.py" can subscribe "objects" topic and can respond to this message. Your robot will slowdown the speed.
