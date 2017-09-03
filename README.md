@@ -2,6 +2,7 @@
 
 * Python3.5
 * Ubuntu 16.04
+* Opencv3.2
 * [ROS](http://wiki.ros.org/kinetic/Installation/Ubuntu)
 * [Tensorflow](https://www.tensorflow.org/install/)
 * [find_object_2d (ROS package)](http://wiki.ros.org/find_object_2d)
