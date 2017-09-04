@@ -109,8 +109,6 @@ class AutoParking():
         self.position_parking = None
 
 
-        self.image_show = 'on'
-
 
     def callback(self, image_msg):
         print self.state

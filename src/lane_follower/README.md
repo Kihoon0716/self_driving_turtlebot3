@@ -10,10 +10,10 @@ Our goal is to make program more easy and light. First, we think obout using hou
 <a href="https://youtu.be/lUix89Cpf3g" target="_blank"><img src="http://img.youtube.com/vi/lUix89Cpf3g/0.jpg" 
 alt="circuit" width="480" height="260" border="10" /></a>
 #### subscribed topic
- * /image_calibrated_compressed(sensor_msgs/CompressedImage)
- * /image_calibrated(sensor_msgs/Image)
+ * /image_birdeye_compressed(sensor_msgs/CompressedImage)
+ * /image_birdeye(sensor_msgs/Image)
 #### published topic
- * /car_barrier(std_msgs/String)
+ * /cmd_vel(geometry_msgs/Twist)
 
 #### parameters
 
