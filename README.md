@@ -41,3 +41,10 @@ roslaunch turtlebot3_bringup turtlebot3_rbot.launch
 roslaunch self_driving_turtlebot3 self_driving.launch
 ```
 
+## Some projects which inspired me
+[camera calibration](http://darkpgmr.tistory.com/32)
+[haar cascade](https://www.youtube.com/watch?v=jG3bu0tjFbk&list=PLQVvvaa0QuDdttJXlLtAJxJetJcqmqlQq&index=17)
+[A* Pathfinding Algorithm](https://www.youtube.com/watch?v=aKYlikFAV4k&index=65&list=PLRqwX-V7Uu6ZiZxtDDRCi6uhfTH4FilpH&t=5s)
+[recognizing rectangular box](http://www.pyimagesearch.com/2014/03/10/building-pokedex-python-getting-started-step-1-6/)
+[blob tetection using Opencv](https://www.learnopencv.com/blob-detection-using-opencv-python-c/)
+[tensorflow in ROS](https://github.com/shunchan0677/Tensorflow_in_ROS)
