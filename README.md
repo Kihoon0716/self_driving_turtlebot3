@@ -7,6 +7,7 @@
 * [Tensorflow](https://www.tensorflow.org/install/)
 * [find_object_2d (ROS package)](http://wiki.ros.org/find_object_2d)
 * [usb_cam (ROS package)](http://wiki.ros.org/usb_cam)
+* [turtlebot3_bringup (ROS package)](https://github.com/ROBOTIS-GIT/turtlebot3)
 
 
 ## Hardware
@@ -36,6 +37,7 @@ cd ~/catkin_ws && catkin_make
 4. roscore and roslaunch
 ```
 roscore
+roslaunch turtlebot3_bringup turtlebot3_rbot.launch
 roslaunch self_driving_turtlebot3 self_driving.launch
 ```
 
