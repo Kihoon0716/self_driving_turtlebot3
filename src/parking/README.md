@@ -5,10 +5,10 @@
  * /image_birdeye_compressed(sensor_msgs/CompressedImage)
  * /image_birdeye(sensor_msgs/Image)
  * /scan(sensor_msgs/LaserScan)
- * /ocom(nav_msgs/Odometry)
+ * /odom(nav_msgs/Odometry)
 #### published topic
  * /parking(std_msgs/String)
- * /cmd_vel(geometry_msgsTwist)
+ * /cmd_vel(geometry_msgs/Twist)
 
 #### parameters
 
