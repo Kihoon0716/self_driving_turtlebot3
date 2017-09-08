@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import tensorflow as tf
 import rospy
 from sensor_msgs.msg import Image
 from std_msgs.msg import String

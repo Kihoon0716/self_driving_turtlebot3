@@ -36,7 +36,7 @@ class Core():
     def __init__(self):
 
         self.selecting_sub_image = "raw"  # you can choose image type "compressed", "raw"
-        self.image_show = 'no' # no ,yes
+        self.image_show = 'yes' # no ,yes
 
         # subscribers
         if self.selecting_sub_image == "compressed":
