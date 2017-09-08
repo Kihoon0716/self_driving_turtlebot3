@@ -71,8 +71,8 @@ def test_distance_equality(point1, point2, point3):
 class Car_barrier_detection():
     def __init__(self):
         self.selecting_sub_image = "raw"  # you can choose image type "compressed", "raw"
-        self.track_bar = 'off'
-        self.image_showing = 'off'
+        self.track_bar = 'on'
+        self.image_showing = 'on'
 
         # subscribers
         if self.selecting_sub_image == "compressed":
@@ -95,7 +95,7 @@ class Car_barrier_detection():
         ilowH = 0
         ihighH = 47
         ilowS = 91
-        ihighS = 140
+        ihighS = 155
         ilowV = 139
         ihighV = 255
 
@@ -150,7 +150,7 @@ class Car_barrier_detection():
         # Filter by Area.
         params.filterByArea = True
         params.minArea = 700
-        params.maxArea = 1800
+        params.maxArea = 3000
 
         # Filter by Circularity
         params.filterByCircularity = True
