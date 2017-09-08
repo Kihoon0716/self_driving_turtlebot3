@@ -153,7 +153,7 @@ class Traffic_light_detection():
 
         # Filter by Convexity
         params.filterByConvexity = True
-        params.minConvexity = 0.6
+        params.minConvexity = 0.5
 
 
         det=cv2.SimpleBlobDetector_create(params)
@@ -163,38 +163,31 @@ class Traffic_light_detection():
         mean_x = 0.0
         mean_y = 0.0
 
+
+        col1 = 450
+        col2 = 640
+
+        low1 = 0
+        low2 = 200
+        frame = cv2.line(frame, (col1, low1), (col1, low2), (255, 255, 0), 5)
+        frame = cv2.line(frame, (col1, low2), (col2, low2), (255, 255, 0), 5)
+        frame = cv2.line(frame, (col2, low2), (col2, low1), (255, 255, 0), 5)
+        frame = cv2.line(frame, (col2, low1), (col1, low1), (255, 255, 0), 5)
+
         # if detected more than 1 red light
         for i in range(len(keypts)):
             point_col = int(keypts[i].pt[0])
             point_low = int(keypts[i].pt[1])
-            print keypts[i].pt
-            #image = cv2.circle(frame, (point_col, point_low), 3, (0, 255, 0), thickness=5,lineType=8, shift=0)
-            low_start = point_low - self.black_color_box_size[self.detecting_color]['top']
-            low_end = point_low + self.black_color_box_size[self.detecting_color]['bottom']
-            col_start = point_col - self.black_color_box_size[self.detecting_color]['w']
-            col_end = point_col + self.black_color_box_size[self.detecting_color]['w']
-            image_crop = frame[low_start:low_end, col_start:col_end]
-            image_crop_gray = cv2.cvtColor(image_crop, cv2.COLOR_RGB2GRAY)
-            ret, image_crop_binary = cv2.threshold(image_crop_gray, 50, 255, cv2.THRESH_BINARY_INV)
-            if self.showing_image == "yes":
-                cv2.imshow("frame", image_crop), cv2.waitKey(1)
-                cv2.imshow("background", image_crop_binary), cv2.waitKey(1)
-            black_count = 0
-            for i in range(image_crop_binary.shape[1]):
-                for j in range(image_crop_binary.shape[0]):
-                    if image_crop_binary[j][i] == 255:
-                        black_count += 1
-            if black_count > image_crop_binary.shape[0] * image_crop_binary.shape[1] * 0.7:
 
-            #if self.mode == 'running' and black_count > image_crop_binary.shape[0] * image_crop_binary.shape[1] * 0.7:
 
+            if point_col > col1 and point_low < low2:
                 print 'yes'
                 message = Traffic_light()
                 message.color = self.detecting_color
                 message.position_x = point_col
                 message.position_y = point_low
                 self._pub.publish(message)
-
+                print keypts[i].pt
         if self.detecting_color == 'red':
             self.detecting_color = 'green'
         elif self.detecting_color == 'green':

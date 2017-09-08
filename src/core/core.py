@@ -116,7 +116,7 @@ class Core():
 
     def commander(self):
 
-        if self.stop_bar_state == 'stop' or self.parking == 'parking_lot_detected' or (self.traffic_light_color == 'red' and self.traffic_light_x > 500) or self.maze == "maze_start":
+        if self.stop_bar_state == 'stop' or self.parking == 'parking_lot_detected' or self.traffic_light_color == 'red' or self.maze == "maze_start":
             self.state = 'stop'
 
         elif self.stop_bar_state == 'slowdown' or self.signal_sign == 'WARNING' or self.find_object > 0:
