@@ -71,8 +71,8 @@ def test_distance_equality(point1, point2, point3):
 class Car_barrier_detection():
     def __init__(self):
         self.selecting_sub_image = "raw"  # you can choose image type "compressed", "raw"
-        self.track_bar = 'on'
-        self.image_showing = 'on'
+        self.track_bar = 'off'
+        self.image_showing = 'off'
 
         # subscribers
         if self.selecting_sub_image == "compressed":

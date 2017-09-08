@@ -70,7 +70,7 @@ class AutoParking():
     def __init__(self):
 
         self.selecting_sub_image = "raw"  # you can choose image type "compressed", "raw"
-        self.image_show = 'off'  # monitering image
+        self.image_show = 'off'  # monitering image on off
 
         # subscribers
         if self.selecting_sub_image == "compressed":
@@ -160,6 +160,19 @@ class AutoParking():
         threshold_distance = 0.3
         obstacle_existence = 'no'
         obstacle_count = 0
+
+
+
+        angle_scan = 10
+        scan_start = 270 - angle_scan
+        scan_end = 270 + angle_scan
+        threshold_distance = 0.5
+        obstacle_existence = 'no'
+        for i in range(scan_start, scan_end):
+            if scan.ranges[i] < threshold_distance and scan.ranges[i] > 0.01:
+                obstacle_existence = 'yes'
+        print obstacle_existence
+
 
 
         if self.state == 'checking_obstacle':

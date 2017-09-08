@@ -36,7 +36,7 @@ class Core():
     def __init__(self):
 
         self.selecting_sub_image = "raw"  # you can choose image type "compressed", "raw"
-        self.image_show = 'yes'
+        self.image_show = 'no' # no ,yes
 
         # subscribers
         if self.selecting_sub_image == "compressed":
@@ -98,7 +98,6 @@ class Core():
             if mean < 30:
                 self.maze = "maze_start"
                 self.commander()
-                converting_to_maze_mode()
 
 
         if self.traffic_light_detected == 'yes':
