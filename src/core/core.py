@@ -43,6 +43,7 @@ class Core():
             self._sub_1 = rospy.Subscriber('/image_calibrated_compressed', CompressedImage, self.monitoring, queue_size=1)
         else:
             self._sub_1 = rospy.Subscriber('/image_calibrated', Image, self.monitoring, queue_size=1)
+            self._sub_1 = rospy.Subscriber('/usb_cam/image_raw', Image, self.maze_check, queue_size=1)
 
         self._sub_2 = rospy.Subscriber('/stop_bar', Stop_bar, self.receiver_stop_bar, queue_size=1)
         self._sub_3 = rospy.Subscriber('/traffic_light', Traffic_light, self.receiver_traffic_light, queue_size=1)
@@ -85,7 +86,7 @@ class Core():
         self.wall_detected = None
         self.count = 0
 
-    def monitoring(self, image_msg):
+    def maze_check(self, image_msg):
 
         if self.selecting_sub_image == "compressed":
             np_arr = np.fromstring(image_msg.data, np.uint8)
@@ -98,6 +99,24 @@ class Core():
             if mean < 30:
                 self.maze = "maze_start"
                 self.commander()
+
+
+    def monitoring(self, image_msg):
+
+        if self.selecting_sub_image == "compressed":
+            np_arr = np.fromstring(image_msg.data, np.uint8)
+            self.image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+        else:
+            self.image = self._cv_bridge.imgmsg_to_cv2(image_msg, "bgr8")
+
+
+        if self.wall_detected == "yes":
+            mean = np.mean(self.image)
+            if mean < 30:
+                self.maze = "maze_start"
+                self.commander()
+
+
 
 
         if self.traffic_light_detected == 'yes':
@@ -180,15 +199,15 @@ class Core():
 
     def callback2(self, scan):
         scan_arr = np.zeros((180), np.float16)
-        for i in range(270, 450):
-            scan_arr[i-270] = scan.ranges[i%360]*math.sin((i+90)%360)
+        for i in range(0, 90):
+            scan_arr[i] = scan.ranges[i]*math.sin((i))
         count_between_distances = 0
-        distance1 = 0.3
-        distance2 = 0.4
+        distance1 = 0.2
+        distance2 = 0.3
         for i in range(180):
             if scan_arr[i] > distance1 and scan_arr[i] < distance2:
                 count_between_distances += 1
-        if count_between_distances > 70:
+        if count_between_distances > 30:
             self.wall_detected == "yes"
         else:
             self.wall_detected == "no"

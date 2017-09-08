@@ -93,10 +93,10 @@ class Car_barrier_detection():
 
 
         ilowH = 0
-        ihighH = 10
-        ilowS = 70
-        ihighS = 165
-        ilowV = 160
+        ihighH = 47
+        ilowS = 91
+        ihighS = 140
+        ilowV = 139
         ihighV = 255
 
         if self.track_bar == 'on':
@@ -150,7 +150,7 @@ class Car_barrier_detection():
         # Filter by Area.
         params.filterByArea = True
         params.minArea = 100
-        params.maxArea = 4500
+        params.maxArea = 500
 
         # Filter by Circularity
         params.filterByCircularity = True

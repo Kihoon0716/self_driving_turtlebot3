@@ -144,8 +144,8 @@ class Traffic_light_detection():
 
         # Filter by Area.
         params.filterByArea = True
-        params.minArea = 300
-        params.maxArea = 1200
+        params.minArea = 200
+        params.maxArea = 400
 
         # Filter by Circularity
         params.filterByCircularity = True
@@ -164,7 +164,7 @@ class Traffic_light_detection():
         mean_y = 0.0
 
 
-        col1 = 450
+        col1 = 400
         col2 = 640
 
         low1 = 0
@@ -192,8 +192,6 @@ class Traffic_light_detection():
         if self.detecting_color == 'red':
             self.detecting_color = 'green'
         elif self.detecting_color == 'green':
-            self.detecting_color = 'orange'
-        elif self.detecting_color == 'orange':
             self.detecting_color = 'red'
 
         # showing image
