@@ -176,8 +176,9 @@ class Traffic_light_detection():
             image_crop = frame[low_start:low_end, col_start:col_end]
             image_crop_gray = cv2.cvtColor(image_crop, cv2.COLOR_RGB2GRAY)
             ret, image_crop_binary = cv2.threshold(image_crop_gray, 50, 255, cv2.THRESH_BINARY_INV)
-            cv2.imshow("frame", image_crop), cv2.waitKey(1)
-            cv2.imshow("background", image_crop_binary), cv2.waitKey(1)
+            if self.showing_image == "yes":
+                cv2.imshow("frame", image_crop), cv2.waitKey(1)
+                cv2.imshow("background", image_crop_binary), cv2.waitKey(1)
             black_count = 0
             for i in range(image_crop_binary.shape[1]):
                 for j in range(image_crop_binary.shape[0]):
