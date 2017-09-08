@@ -72,7 +72,7 @@ class Car_barrier_detection():
     def __init__(self):
         self.selecting_sub_image = "raw"  # you can choose image type "compressed", "raw"
         self.track_bar = 'off'
-        self.image_showing = 'off'
+        self.image_showing = 'on'
 
         # subscribers
         if self.selecting_sub_image == "compressed":
@@ -149,8 +149,8 @@ class Car_barrier_detection():
 
         # Filter by Area.
         params.filterByArea = True
-        params.minArea = 100
-        params.maxArea = 500
+        params.minArea = 700
+        params.maxArea = 1800
 
         # Filter by Circularity
         params.filterByCircularity = True
