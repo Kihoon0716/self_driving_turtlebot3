@@ -144,7 +144,7 @@ class Traffic_light_detection():
 
         # Filter by Area.
         params.filterByArea = True
-        params.minArea = 120
+        params.minArea = 500
         params.maxArea = 800
 
         # Filter by Circularity
