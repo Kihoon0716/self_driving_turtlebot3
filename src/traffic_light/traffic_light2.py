@@ -64,7 +64,7 @@ def test_distance_equality(point1, point2, point3, point4):
     std = np.std([distance1, distance2, distance3])
 
     if std < threshold_distance_equality:
-        return 'yes'
+        return 'no'
     else:
         return 'no'
 
@@ -82,7 +82,7 @@ class Traffic_light_detection():
         self._pub = rospy.Publisher('/traffic_light', Traffic_light, queue_size=1)
 
         self.mode = 'running'   # tunning, running
-        self.showing_image = 'no'
+        self.showing_image = 'yes'
         self.detecting_color = 'red'  # red, orange, green
 
         self.filter_color = {'red':(0, 20, 60, 190, 93, 255), 'green':(72, 101, 114, 192, 132, 255), 'orange':(255, 255, 255, 207, 100, 255)}
@@ -144,8 +144,8 @@ class Traffic_light_detection():
 
         # Filter by Area.
         params.filterByArea = True
-        params.minArea = 500
-        params.maxArea = 800
+        params.minArea = 300
+        params.maxArea = 1200
 
         # Filter by Circularity
         params.filterByCircularity = True
@@ -153,7 +153,7 @@ class Traffic_light_detection():
 
         # Filter by Convexity
         params.filterByConvexity = True
-        params.minConvexity = 0.5
+        params.minConvexity = 0.6
 
 
         det=cv2.SimpleBlobDetector_create(params)
@@ -178,6 +178,7 @@ class Traffic_light_detection():
         for i in range(len(keypts)):
             point_col = int(keypts[i].pt[0])
             point_low = int(keypts[i].pt[1])
+            print 'detected'
 
 
             if point_col > col1 and point_low < low2:
