@@ -85,7 +85,7 @@ class Traffic_light_detection():
         self.showing_image = 'no'
         self.detecting_color = 'red'  # red, orange, green
 
-        self.filter_color = {'red':(0, 20, 60, 190, 93, 255), 'green':(72, 101, 114, 192, 132, 255), 'orange':(255, 255, 255, 207, 100, 255)}
+        self.filter_color = {'red':(0, 20, 60, 190, 93, 255), 'green':(69, 110, 62, 137, 187, 255), 'orange':(255, 255, 255, 207, 100, 255)}
         self.filter_tuning = (72, 101, 114, 192, 132, 255)
         self.black_color_box_size = {'red':{'w':20, 'top':30, 'bottom':100}, 'green':{'w':10, 'top':40, 'bottom':10}, 'orange':{'w':20, 'top':90, 'bottom':40}}
     def callback(self, image_msg):
