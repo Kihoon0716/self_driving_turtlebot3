@@ -82,7 +82,7 @@ class Traffic_light_detection():
         self._pub = rospy.Publisher('/traffic_light', Traffic_light, queue_size=1)
 
         self.mode = 'running'   # tunning, running
-        self.showing_image = 'yes'
+        self.showing_image = 'no'
         self.detecting_color = 'red'  # red, orange, green
 
         self.filter_color = {'red':(0, 20, 60, 190, 93, 255), 'green':(72, 101, 114, 192, 132, 255), 'orange':(255, 255, 255, 207, 100, 255)}
