@@ -200,8 +200,8 @@ class Car_barrier_detection():
 
                 # publishing topic
                 if angle < 45:
-                    self.stop_bar_count = 5
-                    if distance_bar2car > 1:
+                    self.stop_bar_count = 20
+                    if distance_bar2car > 1.1:
                         self.stop_bar_state = 'slowdown'
                     else:
                         self.stop_bar_state = 'stop'
