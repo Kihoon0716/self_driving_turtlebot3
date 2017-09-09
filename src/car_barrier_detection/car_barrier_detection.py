@@ -72,7 +72,7 @@ class Car_barrier_detection():
     def __init__(self):
         self.selecting_sub_image = "raw"  # you can choose image type "compressed", "raw"
         self.track_bar = 'off'
-        self.image_showing = 'off'
+        self.image_showing = 'on'
 
         # subscribers
         if self.selecting_sub_image == "compressed":
@@ -125,7 +125,7 @@ class Car_barrier_detection():
             frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
         else:
             frame = self._cv_bridge.imgmsg_to_cv2(image_msg, "bgr8")
-
+        frame[45:,:,:] = 0
         # HSV
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         lower_hsv = np.array([ilowH, ilowS, ilowV])
@@ -205,6 +205,7 @@ class Car_barrier_detection():
                         self.stop_bar_state = 'slowdown'
                     else:
                         self.stop_bar_state = 'stop'
+                    print distance_bar2car
                 else:
                     self.stop_bar_count = 0
                     self.stop_bar_state = 'go'
