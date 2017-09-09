@@ -72,7 +72,7 @@ class Car_barrier_detection():
     def __init__(self):
         self.selecting_sub_image = "raw"  # you can choose image type "compressed", "raw"
         self.track_bar = 'off'
-        self.image_showing = 'on'
+        self.image_showing = 'off'
 
         # subscribers
         if self.selecting_sub_image == "compressed":
