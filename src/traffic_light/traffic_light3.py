@@ -81,23 +81,18 @@ class Traffic_light_detection():
 
         self._pub = rospy.Publisher('/traffic_light', Traffic_light, queue_size=1)
 
-        self.mode = 'running'   # tuning, running
-        self.showing_image = 'yes'
+        self.mode = 'running'   # tunning, running
+        self.showing_image = 'no'
         self.detecting_color = 'red'  # red, orange, green
 
-        self.filter_color = {'red':(0, 20, 60, 190, 93, 255), 'green':(69, 110, 62, 165, 187, 255), 'orange':(255, 255, 255, 207, 100, 255)}
-        self.filter_tuning = (69, 110, 62, 137, 187, 255)
+        self.filter_color = {'red':(0, 20, 60, 190, 93, 255), 'green':(69, 110, 62, 137, 187, 255), 'orange':(255, 255, 255, 207, 100, 255)}
+        self.filter_tuning = (72, 101, 114, 192, 132, 255)
         self.black_color_box_size = {'red':{'w':20, 'top':30, 'bottom':100}, 'green':{'w':10, 'top':40, 'bottom':10}, 'orange':{'w':20, 'top':90, 'bottom':40}}
 
         self.orange_count = 0
         self.red_count = 0
 
-        self.traffic_light_end = "no"
-
     def callback(self, image_msg):
-        if self.traffic_light_end == "yes":
-            return
-
 
         if self.mode == 'tuning':
             cv2.namedWindow('ColorFilter')
@@ -153,7 +148,7 @@ class Traffic_light_detection():
 
         # Filter by Area.
         params.filterByArea = True
-        params.minArea = 100
+        params.minArea = 200
         params.maxArea = 400
 
         # Filter by Circularity
@@ -173,7 +168,7 @@ class Traffic_light_detection():
         mean_y = 0.0
 
 
-        col1 = 300
+        col1 = 400
         col2 = 640
 
         low1 = 0
@@ -193,47 +188,61 @@ class Traffic_light_detection():
             if point_col > col1 and point_low < low2:
                 print 'yes'
                 if self.detecting_color == 'green':
-                    if self.red_count == 0:
-                        self.orange_count = 60
-                        message = Traffic_light()
-                        message.color = "orange"
-                        message.position_x = point_col
-                        message.position_y = point_low
-                        self._pub.publish(message)
-                    else:
-                        message = Traffic_light()
-                        message.color = "green"
-                        message.position_x = point_col
-                        message.position_y = point_low
-                        self._pub.publish(message)
-
-                if self.detecting_color == 'red':
                     self.orange_count = 0
-                    self.red_count = 30
+                    self.red_count = 0
                     message = Traffic_light()
                     message.color = self.detecting_color
                     message.position_x = point_col
                     message.position_y = point_low
                     self._pub.publish(message)
 
-        if self.red_count == 1:
-            message = Traffic_light()
-            message.color = "green"
-            message.position_x = 100
-            message.position_y = 100
-            self._pub.publish(message)
 
-        if self.orange_count == 1:
-            message = Traffic_light()
-            message.color = "green"
-            message.position_x = 100
-            message.position_y = 100
-            self._pub.publish(message)
+                if self.detecting_color == 'red':
+                    message = Traffic_light()
+                    message.color = "orange"
+                    message.position_x = point_col
+                    message.position_y = point_low
+                    self._pub.publish(message)
 
-        if self.red_count > 0:
-            self.red_count -= 1
+                    self.orange_count = 10
+
+                    if self.red_count > 50:
+                        message = Traffic_light()
+                        message.color = self.detecting_color
+                        message.position_x = point_col
+                        message.position_y = point_low
+                        self._pub.publish(message)
+
         if self.orange_count > 0:
-            self.orange_count -= 1
+            self.red_count += 1
+        if self.orange_count == 0:
+            self.red_count = 0
+
+
+        if self.orange_count > 0 and self.red_count == 0:
+            message = Traffic_light()
+            message.color = "orange"
+            message.position_x = 100
+            message.position_y = 100
+            self._pub.publish(message)
+
+        if self.orange_count > 0 and self.red_count > 0:
+            message = Traffic_light()
+            message.color = "red"
+            message.position_x = 100
+            message.position_y = 100
+            self._pub.publish(message)
+
+        if (self.orange_count == 1 and self.red_count == 0) or (self.orange_count == 0 and self.red_count == 1) or (self.orange_count == 1 and self.red_count == 1):
+            message = Traffic_light()
+            message.color = "green"
+            message.position_x = 100
+            message.position_y = 100
+            self._pub.publish(message)
+
+
+        self.orange_count -= 1
+        self.red_count -= 1
 
         if self.detecting_color == 'red':
             self.detecting_color = 'green'

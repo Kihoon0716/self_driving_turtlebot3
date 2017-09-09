@@ -176,7 +176,7 @@ class AutoParking():
 
 
         if self.state == 'checking_obstacle':
-            angle_scan = 10
+            angle_scan = 15
             scan_start = 270 - angle_scan
             scan_end = 270 + angle_scan
             threshold_distance = 0.5

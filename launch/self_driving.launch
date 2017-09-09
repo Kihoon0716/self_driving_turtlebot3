@@ -27,7 +27,8 @@
   <node name="car_barrier_detection" pkg="self_driving_turtlebot3" type="car_barrier_detection.py">
   </node>
 
-  <node name="traffic_light2" pkg="self_driving_turtlebot3" type="traffic_light2.py">
+
+  <node name="maze" pkg="self_driving_turtlebot3" type="maze.py">
   </node>
 
 

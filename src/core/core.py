@@ -53,6 +53,7 @@ class Core():
         self._sub_7 = rospy.Subscriber('/signal_sign', String, self.receiver_signal_sign, queue_size=1)
         self._sub_8 = rospy.Subscriber('/objects', Float32MultiArray, self.receiver_object_find, queue_size=1)
         self._pub_1 = rospy.Publisher('/command_lane_follower', String, queue_size=1)
+        self._pub_2 = rospy.Publisher('/command_maze', String, queue_size=1)
 
         self._cv_bridge = CvBridge()
 
@@ -135,7 +136,7 @@ class Core():
 
     def commander(self):
 
-        if self.stop_bar_state == 'stop' or self.parking == 'parking_lot_detected' or self.traffic_light_color == 'red' or self.maze == "maze_start":
+        if self.stop_bar_state == 'stop' or self.parking == 'parking_lot_detected' or (self.traffic_light_color == 'red' and self.traffic_light_x > 550) or self.maze == "maze_start":
             self.state = 'stop'
 
         elif self.stop_bar_state == 'slowdown' or self.signal_sign == 'WARNING' or self.find_object > 0:
@@ -168,7 +169,7 @@ class Core():
     def receiver_maze(self, maze):
         self.maze = maze.data
         if self.maze == "maze_end":
-            converting_to_tracer_mode()
+            self.commander()
 
     def receiver_signal_sign(self, signal_sign):
         self.signal_sign = signal_sign.data
