@@ -97,9 +97,11 @@ class Core():
 
         if self.wall_detected == "yes":
             mean = np.mean(self.image)
-            if mean < 30:
+            print mean
+            if mean < 200 and self.maze != "maze_start":
                 self.maze = "maze_start"
                 self.commander()
+                self._pub_2.publish(self.maze)
 
 
     def monitoring(self, image_msg):
@@ -109,9 +111,10 @@ class Core():
             self.image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
         else:
             self.image = self._cv_bridge.imgmsg_to_cv2(image_msg, "bgr8")
-
+        print self.wall_detected
 
         if self.wall_detected == "yes":
+            print "yes"
             mean = np.mean(self.image)
             if mean < 30:
                 self.maze = "maze_start"
@@ -136,7 +139,7 @@ class Core():
 
     def commander(self):
 
-        if self.stop_bar_state == 'stop' or self.parking == 'parking_lot_detected' or (self.traffic_light_color == 'red' and self.traffic_light_x > 550) or self.maze == "maze_start":
+        if self.stop_bar_state == 'stop' or self.parking == 'parking_lot_detected' or (self.traffic_light_color == 'red' and self.traffic_light_x > 500) or self.maze == "maze_start":
             self.state = 'stop'
 
         elif self.stop_bar_state == 'slowdown' or self.signal_sign == 'WARNING' or self.find_object > 0:
@@ -203,15 +206,16 @@ class Core():
         for i in range(0, 90):
             scan_arr[i] = scan.ranges[i]*math.sin((i))
         count_between_distances = 0
-        distance1 = 0.2
-        distance2 = 0.3
+        distance1 = 0.1
+        distance2 = 0.4
         for i in range(180):
             if scan_arr[i] > distance1 and scan_arr[i] < distance2:
                 count_between_distances += 1
-        if count_between_distances > 30:
-            self.wall_detected == "yes"
+        print count_between_distances
+        if count_between_distances > 13:
+            self.wall_detected = "yes"
         else:
-            self.wall_detected == "no"
+            self.wall_detected = "no"
 
 
 if __name__ == '__main__':

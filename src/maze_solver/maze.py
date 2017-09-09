@@ -56,7 +56,7 @@ class Maze_pathfinder():
         self._pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
         self._pub2 = rospy.Publisher('/maze', String, queue_size=1)
 
-        self.state = 'waiting_for_command' # path_finding, stop, going, direction_setting
+        self.state = 'setting_start_and_goal' # path_finding, stop, going, direction_setting
 
         # variables used in maze solve
 
@@ -86,28 +86,13 @@ class Maze_pathfinder():
         self.position_now = [odometry.pose.pose.position.x, odometry.pose.pose.position.y]
         quaternion = (odometry.pose.pose.orientation.x, odometry.pose.pose.orientation.y, odometry.pose.pose.orientation.z, odometry.pose.pose.orientation.w)
         self.theta_now = euler_from_quaternion(quaternion)
+        print self.state
 
 
         if self.state == "setting_start_and_goal":
-            min_distance = 100
-            for i in range(90,180):
-                if self.scan.ranges[i] < min_distance:
-                    min_distance = self.scan.ranges[i]
-                    idx_1 = i
-            min_distance = 100
-            for i in range(0,90):
-                if self.scan.ranges[i] < min_distance:
-                    min_distance = self.scan.ranges[i]
-                    idx_2 = i
-            point1 = [self.position_now[0] + self.scan.ranges[idx_1] * math.cos(idx_1 * np.pi/180 + self.theta_now), self.position_now[1] + self.scan.ranges[idx_1] * math.sin(idx_1 * np.pi/180 + self.theta_now)]
-            point2 = [self.position_now[0] + self.scan.ranges[idx_2] * math.cos(idx_2 * np.pi/180 + self.theta_now), self.position_now[1] + self.scan.ranges[idx_2] * math.sin(idx_2 * np.pi/180 + self.theta_now)]
-            between_point1_point2 = [(point1[0] + point2[0])/2, (point1[1] + point2[1])/2]
 
-            # defining start point
-            angle = theta_dot2dot(point1, point2)
-            self.standard_theta = angle
-            self.start_point = [between_point1_point2[0] + math.cos(angle + np.pi/2) * 0.1, between_point1_point2[1] + math.sin(angle + np.pi/2) * 0.1]
-
+            self.standard_theta = self.theta_now - np.pi/2
+            self.start_point = [self.position_now[0] + math.cos(self.standard_theta + np.pi/2) * 0.3, self.position_now[1] + math.sin(self.standard_theta + np.pi/2) * 0.3]
 
             self.state = "move_to_start_point"
 
@@ -220,14 +205,14 @@ class Maze_pathfinder():
         index1 = 1000
         index2 = 1000
         for i in range((90 - self.angle_from_direction[self.current_direction] + 360)%360, (90 - self.angle_from_direction[self.current_direction] + 360 + 90)%360):
-            if self.scan.ranges[i] <0.3 and self.scan.ranges[i+1] > 1:
+            if self.scan[i] <0.3 and self.scan[i+1] > 1:
                 index2 = i
 
         for i in range((180 - self.angle_from_direction[self.current_direction] + 360)%360, (180 - self.angle_from_direction[self.current_direction] + 360 + 90)%360):
-            if self.scan.ranges[i] <0.3 and self.scan.ranges[i+1] > 1:
+            if self.scan[i] <0.3 and self.scan[i+1] > 1:
                 index1 = i
-        point1 = [self.position_now[0] + self.scan.ranges[index1] * math.cos(index1 * np.pi/180 + self.theta_now), self.position_now[1] + self.scan.ranges[index1] * math.sin(index1 * np.pi/180 + self.theta_now)]
-        point2 = [self.position_now[0] + self.scan.ranges[index2] * math.cos(index2 * np.pi/180 + self.theta_now), self.position_now[1] + self.scan.ranges[index2] * math.sin(index2 * np.pi/180 + self.theta_now)]
+        point1 = [self.position_now[0] + self.scan[index1] * math.cos(index1 * np.pi/180 + self.theta_now), self.position_now[1] + self.scan[index1] * math.sin(index1 * np.pi/180 + self.theta_now)]
+        point2 = [self.position_now[0] + self.scan[index2] * math.cos(index2 * np.pi/180 + self.theta_now), self.position_now[1] + self.scan[index2] * math.sin(index2 * np.pi/180 + self.theta_now)]
 
         angle_desired = self.standard_theta + np.pi/2
         angle_actual = theta_dot2dot(point1, point2)
@@ -241,8 +226,8 @@ class Maze_pathfinder():
         self.cell = np.zeros((6,4), np.uint8)
         obstacle = "no"
         for i in range(180):
-            x_pose = math.cos(i*np.pi/180 + self.theta_from_direction[check_direction] - self.theta_from_direction[current_direction])*self.scan.ranges[i]
-            y_pose = math.sin(i*np.pi/180 + self.theta_from_direction[check_direction] - self.theta_from_direction[current_direction])*self.scan.ranges[i]
+            x_pose = math.cos(i*np.pi/180 + self.theta_from_direction[check_direction] - self.theta_from_direction[current_direction])*self.scan[i]
+            y_pose = math.sin(i*np.pi/180 + self.theta_from_direction[check_direction] - self.theta_from_direction[current_direction])*self.scan[i]
             if abs(x_pose) < 0.15 and y_pose < 0.20:
                 obstacle = "yes"
                 if x_pose > 0:
@@ -265,14 +250,14 @@ class Maze_pathfinder():
             self.moving_point = None
 
     def callback3(self, scan):
-        self.scan = scan
+        self.scan = np.zeros((360), np.uint8)
 
 
         for i in range(360):
             if scan.ranges[(i + 270) % 360] != 0:
-                self.scan.ranges[i] = scan.ranges[(i + 270) % 360]
+                self.scan[i] = scan.ranges[(i + 270) % 360]
             else:
-                self.scan.ranges[i] = 3
+                self.scan[i] = 3
 
 
 
@@ -282,7 +267,6 @@ class Maze_pathfinder():
         if diff > 2*np.pi:
             diff -= 2*np.pi
         if diff > np.pi/100:
-            print 'diff', abs(theta_desired - theta_now)
             self.setting_angle(theta_now, theta_desired)
         else:
             self.going_straight()
@@ -292,9 +276,6 @@ class Maze_pathfinder():
     def setting_angle(self, theta_now, theta_desired):
         if theta_desired < 0:
             theta_desired += np.pi*2
-        print 'setting angle'
-        print theta_now
-        print theta_desired
         if theta_desired > theta_now:
             if theta_desired - theta_now < np.pi:
                 turn_direction = 'left'
@@ -319,14 +300,10 @@ class Maze_pathfinder():
             ang_z = turn_speed
         else:
             ang_z = - turn_speed
-        self.publishing_vel(0, 0, 0, 0, 0, ang_z)
+        self.publishing_vel(0, 0, ang_z, 0, 0, 0)
 
     def going_straight(self):
-        print 'going straight'
-        print self.position_now
-        print self.theta_now
-        print self.position_parking
-        self.publishing_vel(0.12, 0, 0, 0, 0, 0)
+        self.publishing_vel(0, 0, 0, 0.12, 0, 0)
 
     def stop(self):
         self.publishing_vel(0, 0, 0, 0, 0, 0)
