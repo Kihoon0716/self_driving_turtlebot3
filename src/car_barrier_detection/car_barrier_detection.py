@@ -71,8 +71,8 @@ def test_distance_equality(point1, point2, point3):
 class Car_barrier_detection():
     def __init__(self):
         self.selecting_sub_image = "raw"  # you can choose image type "compressed", "raw"
-        self.track_bar = 'on'
-        self.image_showing = 'on'
+        self.track_bar = 'off'
+        self.image_showing = 'off'
 
         # subscribers
         if self.selecting_sub_image == "compressed":
@@ -125,7 +125,7 @@ class Car_barrier_detection():
             frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
         else:
             frame = self._cv_bridge.imgmsg_to_cv2(image_msg, "bgr8")
-        frame[45:,:,:] = 0
+        frame[50:,:,:] = 0
         # HSV
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         lower_hsv = np.array([ilowH, ilowS, ilowV])
@@ -200,7 +200,7 @@ class Car_barrier_detection():
 
                 # publishing topic
                 if angle < 45:
-                    self.stop_bar_count = 20
+                    self.stop_bar_count = 40
                     if distance_bar2car > 0.9:
                         self.stop_bar_state = 'slowdown'
                     else:
