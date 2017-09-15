@@ -9,6 +9,7 @@ import math
 from self_driving_turtlebot3.msg import Stop_bar
 from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import Image
+from nav_msgs.msg import Odometry
 
 def callback(x):
     pass
@@ -82,12 +83,18 @@ class Car_barrier_detection():
 
         # poblishers
         self._pub = rospy.Publisher('/stop_bar', Stop_bar, queue_size=1)
+        self._sub_3 = rospy.Subscriber('/odom', Odometry, self.callback3, queue_size=1)
 
 
         self.stop_bar_count = 0
         self.stop_bar_state = 'go'
 
         self._cv_bridge = CvBridge()
+
+        self.position_now = None
+        self.position_stop_bar = None
+        self.state = "detecting"
+
 
     def callback(self, image_msg):
 
@@ -203,8 +210,10 @@ class Car_barrier_detection():
                     self.stop_bar_count = 40
                     if distance_bar2car > 0.9:
                         self.stop_bar_state = 'slowdown'
+                        self.state = "detected"
                     else:
                         self.stop_bar_state = 'stop'
+
                     print distance_bar2car
                 else:
                     self.stop_bar_count = 0
@@ -239,6 +248,25 @@ class Car_barrier_detection():
         if self.image_showing == 'on':
             cv2.imshow("RedFilter", img), cv2.waitKey(1)
             cv2.imshow("detecting stop bar", frame), cv2.waitKey(1)
+
+    def callback3(self, odometry):
+        self.position_now = [odometry.pose.pose.position.x, odometry.pose.pose.position.y]
+        if self.state == "detected":
+            if self.position_stop_bar == None:
+                self.position_stop_bar = self.position_now
+            if find_distance_dot2dot(self.position_now[0], self.position_now[1], self.position_stop_bar[0], self.position_stop_bar[1]) > 0.2:
+                self.stop_bar_count = 80
+                message = Stop_bar()
+                message.state = "stop"
+                message.distance = 100 / find_distance_dot2dot(point1[0], point1[1], point2[0], point2[1])
+                message.position1_x = 100
+                message.position1_y = 100
+                message.position2_x = 100
+                message.position2_y = 100
+                self._pub.publish(message)
+
+
+
     def main(self):
         rospy.spin()
 
