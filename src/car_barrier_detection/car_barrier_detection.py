@@ -71,8 +71,8 @@ def test_distance_equality(point1, point2, point3):
 class Car_barrier_detection():
     def __init__(self):
         self.selecting_sub_image = "raw"  # you can choose image type "compressed", "raw"
-        self.track_bar = 'off'
-        self.image_showing = 'off'
+        self.track_bar = 'on'
+        self.image_showing = 'on'
 
         # subscribers
         if self.selecting_sub_image == "compressed":
@@ -201,7 +201,7 @@ class Car_barrier_detection():
                 # publishing topic
                 if angle < 45:
                     self.stop_bar_count = 20
-                    if distance_bar2car > 0.86:
+                    if distance_bar2car > 0.9:
                         self.stop_bar_state = 'slowdown'
                     else:
                         self.stop_bar_state = 'stop'

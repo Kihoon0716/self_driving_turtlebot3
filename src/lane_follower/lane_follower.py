@@ -170,7 +170,7 @@ class Lane_tracer():
             self.speed = 2
 
         if self.run == 'slowdown':
-            self.speed = 1
+            self.speed = 0.3
 
         if self.run == 'stop':
             self.publishing_vel(0, 0, 0, 0, 0, 0)
