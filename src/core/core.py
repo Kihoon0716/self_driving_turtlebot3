@@ -114,13 +114,11 @@ class Core():
         print self.wall_detected
 
         if self.wall_detected == "yes":
-            print "yes"
             mean = np.mean(self.image)
+            print mean
             if mean < 30:
                 self.maze = "maze_start"
                 self.commander()
-
-
 
 
         if self.traffic_light_detected == 'yes':
@@ -133,18 +131,19 @@ class Core():
                 self.draw_stop_bar()
             self.stop_bar_detected = 'no'
 
-        cv2.putText(self.image, self.state, (100, 100),cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+        #cv2.putText(self.image, self.state, (100, 100),cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
         if self.image_show == 'yes':
             cv2.imshow("monitoring", self.image), cv2.waitKey(1)
 
     def commander(self):
 
-        if self.stop_bar_state == 'stop' or self.parking == 'parking_lot_detected' or (self.traffic_light_color == 'red' and self.traffic_light_x > 500) or self.maze == "maze_start":
+        if self.stop_bar_state == 'stop' or self.parking == 'parking_lot_detected' or (self.traffic_light_color == 'red' and self.traffic_light_x > 550) or self.maze == "maze_start":
             self.state = 'stop'
 
         elif self.stop_bar_state == 'slowdown' or self.signal_sign == 'WARNING' or self.find_object > 0:
             self.state = 'slowdown'
-
+        elif self.traffic_light_color == 'fast':
+            self.state = 'fast'
         else:
             self.state = 'go'
         self._pub_1.publish(self.state)
@@ -202,6 +201,7 @@ class Core():
         rospy.spin()
 
     def callback2(self, scan):
+        return
         scan_arr = np.zeros((180), np.float16)
         for i in range(0, 90):
             scan_arr[i] = scan.ranges[i]*math.sin((i))

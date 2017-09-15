@@ -85,18 +85,20 @@ class Traffic_light_detection():
         self.showing_image = 'no'
         self.detecting_color = 'red'  # red, orange, green
 
-        self.filter_color = {'red':(0, 20, 60, 190, 93, 255), 'green':(69, 110, 62, 165, 187, 255), 'orange':(255, 255, 255, 207, 100, 255)}
-        self.filter_tuning = (69, 110, 62, 137, 187, 255)
+        #self.filter_color = {'red':(0, 20, 60, 190, 93, 255), 'green':(69, 110, 62, 165, 187, 255), 'orange':(255, 255, 255, 207, 100, 255)}
+        self.filter_color = {'red':(0, 22, 85, 198, 172, 255), 'green':(69, 100, 96, 198, 172, 255), 'orange':(255, 255, 255, 207, 100, 255)}
+        self.filter_tuning = (170, 192, 81, 128, 120, 255)
         self.black_color_box_size = {'red':{'w':20, 'top':30, 'bottom':100}, 'green':{'w':10, 'top':40, 'bottom':10}, 'orange':{'w':20, 'top':90, 'bottom':40}}
 
         self.orange_count = 0
         self.red_count = 0
 
         self.traffic_light_end = "no"
+        self.state = "run"
 
     def callback(self, image_msg):
-        if self.traffic_light_end == "yes":
-            return
+        if self.state == "end":
+            returnr
 
 
         if self.mode == 'tuning':
@@ -105,7 +107,7 @@ class Traffic_light_detection():
             ilowH, ihighH, ilowS, ihighS, ilowV, ihighV = self.filter_tuning
 
             # create trackbars for color change
-            cv2.createTrackbar('lowH','ColorFilter',ilowH,179,callback)
+            cv2.createTrackbar('lowH','ColorFilter',ilowH,255,callback)
             cv2.createTrackbar('highH','ColorFilter',ihighH,255,callback)
 
             cv2.createTrackbar('lowS','ColorFilter',ilowS,255,callback)
@@ -154,7 +156,7 @@ class Traffic_light_detection():
         # Filter by Area.
         params.filterByArea = True
         params.minArea = 100
-        params.maxArea = 400
+        params.maxArea = 800
 
         # Filter by Circularity
         params.filterByCircularity = True
@@ -167,7 +169,7 @@ class Traffic_light_detection():
 
         det=cv2.SimpleBlobDetector_create(params)
         keypts=det.detect(cv_image_binary)
-        #frame=cv2.drawKeypoints(frame,keypts,np.array([]),(0,255,255),cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+        frame=cv2.drawKeypoints(frame,keypts,np.array([]),(0,255,255),cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
         mean_x = 0.0
         mean_y = 0.0
@@ -193,14 +195,16 @@ class Traffic_light_detection():
             if point_col > col1 and point_low < low2:
                 print 'yes'
                 if self.detecting_color == 'green':
-                    if self.red_count == 0:
-                        self.orange_count = 60
+                    if self.red_count > 0:
+                        self.red_count = 0
+                        self.state = "end"
                         message = Traffic_light()
-                        message.color = "orange"
+                        message.color = "fast"
                         message.position_x = point_col
                         message.position_y = point_low
                         self._pub.publish(message)
                     else:
+                        self.red_count = 0
                         message = Traffic_light()
                         message.color = "green"
                         message.position_x = point_col
@@ -208,7 +212,6 @@ class Traffic_light_detection():
                         self._pub.publish(message)
 
                 if self.detecting_color == 'red':
-                    self.orange_count = 0
                     self.red_count = 30
                     message = Traffic_light()
                     message.color = self.detecting_color
@@ -223,17 +226,9 @@ class Traffic_light_detection():
             message.position_y = 100
             self._pub.publish(message)
 
-        if self.orange_count == 1:
-            message = Traffic_light()
-            message.color = "green"
-            message.position_x = 100
-            message.position_y = 100
-            self._pub.publish(message)
 
         if self.red_count > 0:
             self.red_count -= 1
-        if self.orange_count > 0:
-            self.orange_count -= 1
 
         if self.detecting_color == 'red':
             self.detecting_color = 'green'

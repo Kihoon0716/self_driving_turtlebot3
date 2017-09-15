@@ -64,8 +64,8 @@ class Lane_tracer():
         self.lane_position = 0
         self.lane_existance = 'yes'
 
-        self.speed = 2 # Increasing this variable makes angular and linear speed fast in same ratio
-
+        self.speed = 1 # Increasing this variable makes angular and linear speed fast in same ratio
+        self.fast = 'off'
 
 
     def PIDcontrol(self, x0, y0, x1, y1, x2, y2):
@@ -84,6 +84,7 @@ class Lane_tracer():
         return sign_, theta_wheel
 
     def callback(self, image_msg):
+        print self.speed
         if self.run == 'stop':
             print 'stop!'
             return
@@ -159,10 +160,17 @@ class Lane_tracer():
 
     def receiver_from_core(self, command):
         self.run = command.data
+
+        if self.run == 'fast':
+            self.fast = 'on'
+        if self.run == 'go':
+            self.speed = 1
+
+        if self.fast == 'on':
+            self.speed = 2
+
         if self.run == 'slowdown':
             self.speed = 1
-        elif self.run == 'go':
-            self.speed = 2
 
         if self.run == 'stop':
             self.publishing_vel(0, 0, 0, 0, 0, 0)
