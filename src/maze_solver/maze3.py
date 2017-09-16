@@ -81,7 +81,7 @@ class Maze_pathfinder():
         self.angle_from_direction = {'right':0, 'top':90, 'left':180, 'bottom':270}
 
         self.moving_point = None
-        self.key_point = [[0,0.2],[-1.2, 0],[0,0.75]]
+        self.key_point = [[0,0.2],[-1.1,0],[0,1.3],[-0.5, 0],[0,0.2]]
         self.move_point = None
         self.move_coor = None
         self.theta_stan = None
