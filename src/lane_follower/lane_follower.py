@@ -73,6 +73,7 @@ class Lane_tracer():
         self.count = 0
         self.state = "usual" #usual, turn_go, turn_stop
         self.count2 = 0
+        self.count3 = 0
 
         self.position_now = None
         self.position_stop = None
@@ -97,14 +98,14 @@ class Lane_tracer():
         print self.count
         self.count += 1
 
-        if self.count > 10:
+        if self.count > 50:
             self.speed = 0.3
 
-        if self.count > 10:
+        if self.count > 250:
             self.speed = 2
             self.fast = "on"
 
-        if self.count == 10:
+        if self.count == 1200:
             self.state = "turn_stop"
             self.stop_count = 0
 
@@ -154,17 +155,23 @@ class Lane_tracer():
                 else:
                     low_point2 -= 50
 
+        if self.state == "maze":
+            self.count2 += 1
+            if self.lane_existance == 'yes':
+                if self.count2 > 100:
+                    self.count3 += 1
+                    if self.count3 > 10:
+                        self.state = "usual"
+                        self.run = "yes"
+                        self._pub_2.publish("maze_end")
+
+
         if self.state == "turn_go":
             if self.lane_existance == 'no':
-
                 self._pub_2.publish("maze_start")
                 self.state = "maze"
-                self.count2 += 1
-            else:
-                if self.count2 > 100:
-                    self._pub_2.publish("maze_end")
-                    self.state = "usual"
-                    self.run = "yes"
+
+
         if self.state == "maze":
             return
 
