@@ -40,7 +40,7 @@ class ImageTransform():
     def callback(self, image_msg):
         # drop the frame to 1/5 (6fps) because of the processing speed. This is up to your computer's operating power.
         self.counter += 1
-        if self.counter%2 != 0:
+        if self.counter%3 != 0:
             return
 
         if self.selecting_sub_image == "compressed":

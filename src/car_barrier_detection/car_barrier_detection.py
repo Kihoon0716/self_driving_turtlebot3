@@ -72,8 +72,8 @@ def test_distance_equality(point1, point2, point3):
 class Car_barrier_detection():
     def __init__(self):
         self.selecting_sub_image = "raw"  # you can choose image type "compressed", "raw"
-        self.track_bar = 'off'
-        self.image_showing = 'off'
+        self.track_bar = 'on'
+        self.image_showing = 'on'
 
         # subscribers
         if self.selecting_sub_image == "compressed":
@@ -256,6 +256,7 @@ class Car_barrier_detection():
                 self.position_stop_bar = self.position_now
             if find_distance_dot2dot(self.position_now[0], self.position_now[1], self.position_stop_bar[0], self.position_stop_bar[1]) > 0.2:
                 self.stop_bar_count = 80
+                self.state = "detecting"
                 message = Stop_bar()
                 message.state = "stop"
                 message.distance = 100 / find_distance_dot2dot(point1[0], point1[1], point2[0], point2[1])
@@ -264,6 +265,7 @@ class Car_barrier_detection():
                 message.position2_x = 100
                 message.position2_y = 100
                 self._pub.publish(message)
+
 
 
 

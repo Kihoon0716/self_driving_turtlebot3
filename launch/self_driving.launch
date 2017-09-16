@@ -13,8 +13,6 @@
   <node name="calibration_and_birdeyeview" pkg="self_driving_turtlebot3" type="calibration_and_birdeyeview.py" output="screen">
   </node>
 
-
-
   <node name="core" pkg="self_driving_turtlebot3" type="core.py">
   </node>
 
@@ -23,13 +21,7 @@
 
   <node name="parking" pkg="self_driving_turtlebot3" type="parking.py">
   </node>
-
-  <node name="car_barrier_detection" pkg="self_driving_turtlebot3" type="car_barrier_detection.py">
+  <node name="maze3" pkg="self_driving_turtlebot3" type="maze3.py">
   </node>
-
-
-  <node name="traffic_light2" pkg="self_driving_turtlebot3" type="traffic_light2.py">
-  </node>
-
 
 </launch>

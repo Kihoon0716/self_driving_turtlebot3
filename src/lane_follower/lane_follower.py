@@ -8,6 +8,7 @@ from geometry_msgs.msg import Twist
 from sensor_msgs.msg import CompressedImage
 from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import Image
+from nav_msgs.msg import Odometry
 
 def callback(x):
     pass
@@ -22,6 +23,9 @@ def distance_dot2line(a, b, c, x0, y0):
     distance = abs(x0*a + y0*b + c)/math.sqrt(a*a + b*b)
     sign_ = sign(x0*a + y0*b + c) * sign(a)
     return sign_, distance
+
+def distance_dot2dot(point1, point2):
+    return math.sqrt((point2[1] - point1[1]) * (point2[1] - point1[1]) + (point2[0] - point1[0]) * (point2[0] - point1[0]))
 
 def centroid(arr, low_point, col_start, col_end):
     count = 0
@@ -52,21 +56,26 @@ class Lane_tracer():
         else:
             self._sub_1 = rospy.Subscriber('/image_birdeye', Image, self.callback, queue_size=1)
         self._sub_2 = rospy.Subscriber('/command_lane_follower', String, self.receiver_from_core, queue_size=1)
-
+        self._sub_3 = rospy.Subscriber('/odom', Odometry, self.callback3, queue_size=1)
         # publishers
         self._pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
 
-
+        self._pub_2 = rospy.Publisher('/command_maze', String, queue_size=1)
         self._cv_bridge = CvBridge()
 
         self.run = 'yes'
 
         self.lane_position = 0
         self.lane_existance = 'yes'
-
-        self.speed = 0.3 # Increasing this variable makes angular and linear speed fast in same ratio
+        self.stop_count = 0
+        self.speed = 2 # Increasing this variable makes angular and linear speed fast in same ratio
         self.fast = 'off'
         self.count = 0
+        self.state = "usual" #usual, turn_go, turn_stop
+        self.count2 = 0
+
+        self.position_now = None
+        self.position_stop = None
 
 
     def PIDcontrol(self, x0, y0, x1, y1, x2, y2):
@@ -85,14 +94,32 @@ class Lane_tracer():
         return sign_, theta_wheel
 
     def callback(self, image_msg):
+        print self.count
         self.count += 1
-        if self.count > 500:
-            self.speed = 1.5
+
+        if self.count > 10:
+            self.speed = 0.3
+
+        if self.count > 10:
+            self.speed = 2
             self.fast = "on"
-        print self.speed
+
+        if self.count == 10:
+            self.state = "turn_stop"
+            self.stop_count = 0
+
+        if self.state == "turn_stop":
+            self.publishing_vel(0,0,0,0,0,0)
+            self.run = "stop"
+            self.stop_count += 1
+
+        if self.stop_count > 40:
+            self.state = "turn_go"
+            self.run = "yes"
+
         if self.run == 'stop':
-            print 'stop!'
             return
+
 
         if self.selecting_sub_image == "compressed":
             np_arr = np.fromstring(image_msg.data, np.uint8)
@@ -127,6 +154,19 @@ class Lane_tracer():
                 else:
                     low_point2 -= 50
 
+        if self.state == "turn_go":
+            if self.lane_existance == 'no':
+
+                self._pub_2.publish("maze_start")
+                self.state = "maze"
+                self.count2 += 1
+            else:
+                if self.count2 > 100:
+                    self._pub_2.publish("maze_end")
+                    self.state = "usual"
+                    self.run = "yes"
+        if self.state == "maze":
+            return
 
 
         # when there is no lane detected turtlebot3 will turn right with 0.2 angular velocity
@@ -163,6 +203,18 @@ class Lane_tracer():
         self.publishing_vel(0, 0, angular_z, 0.06 * self.speed, 0, 0)
 
 
+    def callback3(self, odometry):
+        self.position_now = [odometry.pose.pose.position.x, odometry.pose.pose.position.y]
+        if self.state == "turn_go":
+            if self.position_stop == None:
+                self.position_stop = self.position_now
+            if distance_dot2dot(self.position_now, self.position_stop) > 0.2:
+                self.position_stop = None
+                self.state = "turn_stop"
+                self.publishing_vel(0,0,0,0,0,0)
+                self.run = "stop"
+                self.stop_count = 0
+
     def receiver_from_core(self, command):
         self.run = command.data
         if self.run == 'fast':
@@ -171,7 +223,7 @@ class Lane_tracer():
             self.speed = 0.3
 
         if self.fast == 'on':
-            self.speed = 1.5
+            self.speed = 2
 
         if self.run == 'slowdown':
             self.speed = 0.3
