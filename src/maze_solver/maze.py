@@ -4,14 +4,36 @@ import rospy
 from nav_msgs.msg import OccupancyGrid
 from std_msgs.msg import Int16
 from geometry_msgs.msg import Twist
+from geometry_msgs.msg import PointStamped
+from geometry_msgs.msg import *
+from compressed_image_transport import *
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
-import math
+from tf2_msgs.msg import TFMessage
+from visualization_msgs.msg import Marker
+from visualization_msgs.msg import MarkerArray
+from  mazeSolver import Solver
 import tf
+import math
+import cv2
 import numpy as np
+import threading
 from std_msgs.msg import String
-## developping...
+import heapq
+import timeit
 
+def existance(arr, num):
+    for i in range(0, len(arr)):
+        if arr[i] == num:
+            return True
+    return False
+
+def configure(arr):
+    arr_ = []
+    for i in range(0, len(arr)):
+        if existance(arr_, arr[i]) == False:
+            arr_.append(arr[i])
+    return arr_
 
 def distance_dot2line(a, b, c, x0, y0):
     distance = abs(x0*a + y0*b + c)/math.sqrt(a*a + b*b)
@@ -28,7 +50,7 @@ def theta_dot2dot(start, end):
 
 def euler_from_quaternion(rot):
     quaternion = (rot)
-    theta = tf.transformations.euler_from_quaternion(quaternion)[2]
+    theta = tf.transformations.euler_from_quaternion(quaternion)[2] - np.pi / 2
     return theta
 
 def sign(num):
@@ -46,267 +68,289 @@ class Orientation(object):
         self.theta = euler_from_quaternion(rot)
 
 
+        
+
+
 class Maze_pathfinder():
     def __init__(self):
 
+        self._sub = rospy.Subscriber('/map', OccupancyGrid, self.callback, queue_size=1)
         self._sub = rospy.Subscriber('/odom', Odometry, self.callback2, queue_size=1)
-        self._sub = rospy.Subscriber('/scan', LaserScan, self.callback3, queue_size=1)
-        self._sub_2 = rospy.Subscriber('/command_maze', String, self.receiver_from_core, queue_size=1)
+
+        self._sub = rospy.Subscriber('/clicked_point', PointStamped, self.callback4, queue_size=1)
 
         self._pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
         self._pub2 = rospy.Publisher('/maze', String, queue_size=1)
-
-        self.state = 'setting_start_and_goal' # path_finding, stop, going, direction_setting
+        
+        self._pub_marker_path = rospy.Publisher('/marker_path', Marker, queue_size=1)
+        self._pub_marker_start = rospy.Publisher('/marker_start', Marker, queue_size=1)
+        self._pub_marker_moving = rospy.Publisher('/marker_moving', Marker, queue_size=1)
+        self.state = 'stop' # path_finding, stop, going, direction_setting
 
         # variables used in maze solve
 
-        self.sell_size = 0.1
-        self.car_size = 0.1
+
+        self.theta = 0
 
 
-        # variables used in move to enterance and exit
-        self.position_now = None
-        self.theta_now = None
+        self.goal = None
+        self.path = None
 
-        self.standard_theta = None
+    def callback(self, map_data):
+        time0 = timeit.default_timer()
+        if self.goal == None:
+            return
+        map = np.zeros((384, 384)) #empty space
+        
+        # create map
+        for i in range(0, 384):
+            for j in range(0, 384):
+                # if map_data.data[384*j + i] != 100 and map_data.data[384*j + i] != -1 and map_data.data[384*j + i] != 0:
+                #     print "find other value! : ", map_data.data[384*j + i]
+                if map_data.data[384*j + i] == 100: # there is a obstacle
+                    #map[i][j] = 1
+                    
+                    for k in range(-6, 7):
+                        for h in range(-6, 7):
+                            if i-k >= 384 or i-k < 0 or j-h >=384 or j-h <0:
+                                continue
+                            map[i-k][j-h] = 1       
+                else:
+                    map[i][j] = 0
+                    
+        
+ 
+        col_start = int(200 + self.position_now[1] * 20)
+        row_start = int(196 + self.position_now[0] * 20)
+        col_goal = int(200 + self.goal.y * 20) 
+        row_goal = int(196 + self.goal.x *20)
 
-        self.scan = None
-        self.start_point = None
-        self.exit_point = None
-        self.exit_point2 = None
+        # print "start : ", map[row_start][col_start]
 
-        self.current_direction = None
-        self.theta_from_direction = {'right':0, 'top':np.pi/2, 'left':np.pi, 'bottom':np.pi*3/2}
-        self.angle_from_direction = {'right':0, 'top':90, 'left':180, 'bottom':270}
+        for i in range (5):
+            if map[row_start][col_start] == 0:
+                    break
+            for j in range(-i, i+1):
+                if map[row_start][col_start] == 0:
+                    break
+                elif map[row_start + i][col_start + j] == 0:
+                    row_start += i
+                    col_start += j
+            for j in range(-i, i+1):
+                if map[row_start][col_start] == 0:
+                    break
+                elif map[row_start - i][col_start + j] == 0:
+                    row_start -= i
+                    col_start += j
+            for j in range(-i, i+1):
+                if map[row_start][col_start] == 0:
+                    break
+                elif map[row_start + j][col_start + i] == 0:
+                    row_start += j
+                    col_start += i
+            for j in range(-i, i+1):
+                if map[row_start][col_start] == 0:
+                    break
+                elif map[row_start + j][col_start - i] == 0:
+                    row_start += j
+                    col_start -= i    
+            
 
-        self.moving_point = None
+        
+        solver = Solver(map, 384, 384, int(row_start), int(col_start), int(row_goal), int(col_goal))
+        solver.solve()
+        self.path = solver.getPath()
+
+        #publish marker
+        marker_path = Marker()
+        marker_path.header.frame_id = "map"
+        marker_path.header.stamp = rospy.Time()
+        marker_path.ns = "path"
+        marker_path.id = 0
+        marker_path.type = 4
+        marker_path.action = Marker.ADD
+
+        marker_path.pose.orientation.x = 0.0
+        marker_path.pose.orientation.y = 0.0
+        marker_path.pose.orientation.z = 0.0
+        marker_path.pose.orientation.w = 0.0
+        marker_path.scale.x = 0.05
+        marker_path.scale.y = 0.05
+        marker_path.scale.z = 0.05
+        marker_path.color.a = 1.0
+        marker_path.color.r = 0.0
+        marker_path.color.g = 1.0
+        marker_path.color.b = 0.0
+
+        # appending points
+
+        # print "len : ", len(self.path)
+        for i in range(1, len(self.path)):
+            row = (self.path[i][0] - 196) / 20 
+            col = (self.path[i][1] - 200) / 20 
+            self.addMarkerLine(marker_path, row, col)
+
+        self._pub_marker_path.publish(marker_path)
+        
+        time1 = timeit.default_timer()
+        # print "time 1 : ", time1 - time0
 
 
     def callback2(self, odometry):
+        ## converting odometry to x position, y position and theta
+
+        self.theta = euler_from_quaternion([odometry.pose.pose.orientation.x, odometry.pose.pose.orientation.y, odometry.pose.pose.orientation.z, odometry.pose.pose.orientation.w])
         self.position_now = [odometry.pose.pose.position.x, odometry.pose.pose.position.y]
-        quaternion = (odometry.pose.pose.orientation.x, odometry.pose.pose.orientation.y, odometry.pose.pose.orientation.z, odometry.pose.pose.orientation.w)
-        self.theta_now = euler_from_quaternion(quaternion)
-        print self.state
+        if self.theta < 0:
+            self.theta = self.theta + np.pi*2
+        
+        # draw marker of start point
+        marker_start_point = Marker()
+        marker_start_point.header.frame_id = "map"
+        marker_start_point.header.stamp = rospy.Time()
+        marker_start_point.ns = "start point"
+        marker_start_point.id = 0
+        marker_start_point.type = 2
+        marker_start_point.action = Marker.ADD
+        marker_start_point.pose.position.x = self.position_now[0]
+        marker_start_point.pose.position.y = self.position_now[1]
+        marker_start_point.pose.orientation.x = 0
+        marker_start_point.pose.orientation.y = 0
+        marker_start_point.pose.orientation.z = 0
+        marker_start_point.pose.orientation.w = 0
+        marker_start_point.scale.x = 0.1
+        marker_start_point.scale.y = 0.1
+        marker_start_point.scale.z = 0.1
+        marker_start_point.color.a = 1.0
+        marker_start_point.color.r = 1.0
+        marker_start_point.color.g = 0.0
+        marker_start_point.color.b = 0.0
+        self._pub_marker_start.publish(marker_start_point)
 
-
-        if self.state == "setting_start_and_goal":
-
-            self.standard_theta = self.theta_now - np.pi/2
-            self.start_point = [self.position_now[0] + math.cos(self.standard_theta + np.pi/2) * 0.3, self.position_now[1] + math.sin(self.standard_theta + np.pi/2) * 0.3]
-
-            self.state = "move_to_start_point"
-
-        if self.state == "move_to_start_point":
-            self.move_to_some_point(self.position_now, self.theta_now, self.start_point)
-            distance_remain = distance_dot2dot(self.position_now[0], self.position_now[1], self.start_point[0], self.start_point[1])
-            if distance_remain < 0.02:
-                self.current_direction = "top"
-                self.state = "path_finding" # now maze solve start!!
-
-        if self.state == "path_finding":
-            if abs(self.start_point[0] - self.position_now[0]) > 1.5 and abs(self.start_point[1] - self.position_now[1]) > 1.5:
-                self.check_exit()
-            if self.state == "move_to_exit":
+        #print self.position_now
+        #print self.theta
+        
+        # stop when goal is None
+        if self.goal == None:
+            self.move(0, 0)
+            return
+        else:    
+            move_pose_x = 0
+            move_pose_y = 0
+            try:
+                if len(self.path) > 10:
+                    move_pose_x = (self.path[len(self.path) - 10][0] - 196) / 20
+                    move_pose_y = (self.path[len(self.path) - 10][1] - 200) / 20
+                else:
+                    move_pose_x = (self.path[1][0] - 196) / 20
+                    move_pose_y = (self.path[1][1] - 200) / 20
+            except:
                 return
 
-
-            if self.current_direction == "top":
-                obstacle = self.obs_check("right", self.current_direction)
-                if obstacle == "no":
-                    self.state = "moving"
-                    self.current_direction = "right"
-                else:
-                    obstacle = self.obs_check("top", self.current_direction)
-                    if obstacle == "no":
-                        self.state = "moving"
-                        self.current_direction = "top"
-                    else:
-                        obstacle = self.obs_check("left", self.current_direction)
-                        if obstacle == "no":
-                            self.state = "moving"
-                            self.current_direction = "left"
-                        else:
-                            self.state = "moving"
-                            self.current_direction = "bottom"
-
-            elif self.current_direction == "left":
-                obstacle = self.obs_check("top", self.current_direction)
-                if obstacle == "no":
-                    self.state = "moving"
-                    self.current_direction = "top"
-                else:
-                    obstacle = self.obs_check("left", self.current_direction)
-                    if obstacle == "no":
-                        self.state = "moving"
-                        self.current_direction = "left"
-                    else:
-                        obstacle = self.obs_check("bottom", self.current_direction)
-                        if obstacle == "no":
-                            self.state = "moving"
-                            self.current_direction = "bottom"
-                        else:
-                            self.state = "moving"
-                            self.current_direction = "right"
-
-            elif self.current_direction == "bottom":
-                obstacle = self.obs_check("left", self.current_direction)
-                if obstacle == "no":
-                    self.state = "moving"
-                    self.current_direction = "left"
-                else:
-                    obstacle = self.obs_check("bottom", self.current_direction)
-                    if obstacle == "no":
-                        self.state = "moving"
-                        self.current_direction = "bottom"
-                    else:
-                        obstacle = self.obs_check("right", self.current_direction)
-                        if obstacle == "no":
-                            self.state = "moving"
-                            self.current_direction = "right"
-                        else:
-                            self.state = "moving"
-                            self.current_direction = "top"
-
-            elif self.current_direction == "right":
-                obstacle = self.obs_check("bottom", self.current_direction)
-                if obstacle == "no":
-                    self.state = "moving"
-                    self.current_direction = "bottom"
-                else:
-                    obstacle = self.obs_check("right", self.current_direction)
-                    if obstacle == "no":
-                        self.state = "moving"
-                        self.current_direction = "right"
-                    else:
-                        obstacle = self.obs_check("top", self.current_direction)
-                        if obstacle == "no":
-                            self.state = "moving"
-                            self.current_direction = "top"
-                        else:
-                            self.state = "moving"
-                            self.current_direction = "left"
+            # draw marker of moving point
+            marker_moving_point = Marker()
+            marker_moving_point.header.frame_id = "map"
+            marker_moving_point.header.stamp = rospy.Time()
+            marker_moving_point.ns = "start point"
+            marker_moving_point.id = 0
+            marker_moving_point.type = 2
+            marker_moving_point.action = Marker.ADD
+            marker_moving_point.pose.position.x = move_pose_x
+            marker_moving_point.pose.position.y = move_pose_y
+            marker_moving_point.pose.orientation.x = 0
+            marker_moving_point.pose.orientation.y = 0
+            marker_moving_point.pose.orientation.z = 0
+            marker_moving_point.pose.orientation.w = 0
+            marker_moving_point.scale.x = 0.05
+            marker_moving_point.scale.y = 0.05
+            marker_moving_point.scale.z = 0.05
+            marker_moving_point.color.a = 1.0
+            marker_moving_point.color.r = 0.0
+            marker_moving_point.color.g = 0.0
+            marker_moving_point.color.b = 1.0
+            self._pub_marker_moving.publish(marker_moving_point)
 
 
-        if self.state == "moving":
-            self.move()
-
-        if self.state == "move_to_exit":
-            self.move_to_some_point(self.position_now, self.theta_now, self.exit_point)
-            if distance_dot2dot(self.position_now[0], self.position_now[1], self.exit_point[0], self.exit_point[1]) < 0.005:
-                self.state = "move_to_exit2"
-
-        if self.state == "move_to_exit2":
-            self.move_to_some_point(self.position_now, self.theta_now, self.exit_point2)
-            if distance_dot2dot(self.position_now[0], self.position_now[1], self.exit_point[0], self.exit_point[1]) < 0.005:
-                self.state = "maze_end"
-                self._pub2.publish(self.state)
-
-    def check_exit(self):
-        index1 = 1000
-        index2 = 1000
-        for i in range((90 - self.angle_from_direction[self.current_direction] + 360)%360, (90 - self.angle_from_direction[self.current_direction] + 360 + 90)%360):
-            if self.scan[i] <0.3 and self.scan[i+1] > 1:
-                index2 = i
-
-        for i in range((180 - self.angle_from_direction[self.current_direction] + 360)%360, (180 - self.angle_from_direction[self.current_direction] + 360 + 90)%360):
-            if self.scan[i] <0.3 and self.scan[i+1] > 1:
-                index1 = i
-        point1 = [self.position_now[0] + self.scan[index1] * math.cos(index1 * np.pi/180 + self.theta_now), self.position_now[1] + self.scan[index1] * math.sin(index1 * np.pi/180 + self.theta_now)]
-        point2 = [self.position_now[0] + self.scan[index2] * math.cos(index2 * np.pi/180 + self.theta_now), self.position_now[1] + self.scan[index2] * math.sin(index2 * np.pi/180 + self.theta_now)]
-
-        angle_desired = self.standard_theta + np.pi/2
-        angle_actual = theta_dot2dot(point1, point2)
-        if abs(angle_actual - angle_desired) < 10 * np.pi /180 and abs(0.3 - distance_dot2dot(point1[0], point1[1], point2[0], point2[1]) < 0.1):
-            between_point1_and_point2 = [point1[0] + point2[0], point1[1] + point2[1]]
-            self.exit_point = [between_point1_and_point2[0] + math.cos(angle_actual - np.pi/2)*0.1, between_point1_and_point2[1] + math.sin(angle_actual - np.pi/2)*0.1]
-            self.exit_point2 = [between_point1_and_point2[0] + math.cos(angle_actual + np.pi/2)*0.1, between_point1_and_point2[1] + math.sin(angle_actual + np.pi/2)*0.1]
-            self.state = "move_to_exit"
-
-    def obs_check(self,check_direction, current_direction):
-        self.cell = np.zeros((6,4), np.uint8)
-        obstacle = "no"
-        for i in range(180):
-            x_pose = math.cos(i*np.pi/180 + self.theta_from_direction[check_direction] - self.theta_from_direction[current_direction])*self.scan[i]
-            y_pose = math.sin(i*np.pi/180 + self.theta_from_direction[check_direction] - self.theta_from_direction[current_direction])*self.scan[i]
-            if abs(x_pose) < 0.15 and y_pose < 0.20:
-                obstacle = "yes"
-                if x_pose > 0:
-                    x_num = 3 + int(x_pose*20)
-                else:
-                    x_num = 2 - int(abs(x_pose)*20)
-                y_num = int(y_pose*20)
-                self.cell[x_num][y_num] = 1
-        return obstacle
-
-    def move(self):
-        if self.moving_point == None:
-            angle = self.theta_from_direction[self.current_direction] + self.standard_theta
-            self.moving_point = [self.position_now[0] + math.cos(angle*np.pi/180)*0.05, self.position_now[1] + math.sin(angle*np.pi/180)*0.05]
-        else:
-            self.move_to_some_point(self.position_now, self.theta_now, self.moving_point)
-        if distance_dot2dot(self.position_now[0], self.position_now[1], self.moving_point[0], self.moving_point[1]) < 0.003:
-            self.stop()
-            self.state = "path_finding"
-            self.moving_point = None
-
-    def callback3(self, scan):
-        self.scan = np.zeros((360), np.uint8)
-
-
-        for i in range(360):
-            if scan.ranges[(i + 270) % 360] != 0:
-                self.scan[i] = scan.ranges[(i + 270) % 360]
+            # print "move pose x : ", move_pose_x, " y : ", move_pose_y
+            desired_theta = math.atan2(move_pose_y - self.position_now[1], move_pose_x - self.position_now[0])
+            desired_theta -= np.pi/2
+            if desired_theta < 0:
+                desired_theta += np.pi * 2
+            #print desired_theta
+            diff = desired_theta - self.theta
+            if diff < np.pi:
+                diff += np.pi*2
+            if diff > np.pi:
+                diff -= np.pi*2
+            #print "diff : ", diff
+            if diff > np.pi * 1/3:
+                speed = 0
             else:
-                self.scan[i] = 3
+                speed = 0.3 * abs(np.pi - diff) /np.pi/3
+            
+            self.move(diff, speed)
+            
+        
+        
+        if distance_dot2dot(self.goal.x, self.goal.y, self.position_now[0], self.position_now[1]) < 0.1:
+            self.goal = None
+
+
+    def callback4(self, clicked_point):
+        # print "self x", self.position_now[0]
+        # print "self y", self.position_now[1]
+        # print "self theta", self.theta
+        # print "dist x", clicked_point.point.x
+        # print "dist y", clicked_point.point.y
+
+        self.goal = clicked_point.point
+
+        desired_theta = math.atan2(clicked_point.point.y - self.position_now[1], clicked_point.point.x - self.position_now[0])
+        desired_theta -= np.pi/2
+        if desired_theta < 0:
+            desired_theta += np.pi * 2
+        #print desired_theta
+        diff = desired_theta - self.theta
+        if diff < np.pi:
+            diff += np.pi*2
+        if diff > np.pi:
+            diff -= np.pi*2
+        #print "diff : ", diff
 
 
 
-    def move_to_some_point(self, position_now, theta_now, position_desired):
-        theta_desired = theta_dot2dot(position_now, position_desired)
-        diff = abs(theta_desired - theta_now)
-        if diff > 2*np.pi:
-            diff -= 2*np.pi
-        if diff > np.pi/100:
-            self.setting_angle(theta_now, theta_desired)
-        else:
-            self.going_straight()
+
+        #publish marker
+
+        # marker = Marker()
+        # marker.header.frame_id = "base_link"
+        # marker.header.stamp = rospy.Time()
+        # marker.ns = "my_namespace"
+        # marker.id = 0
+        # marker.type = 4
+        # marker.action = Marker.ADD
+
+        # marker.pose.orientation.x = 0.0
+        # marker.pose.orientation.y = 0.0
+        # marker.pose.orientation.z = 0.0
+        # marker.pose.orientation.w = 0.0
+        # marker.scale.x = 0.05
+        # marker.scale.y = 0.05
+        # marker.scale.z = 0.05
+        # marker.color.a = 1.0
+        # marker.color.r = 0.0
+        # marker.color.g = 1.0
+        # marker.color.b = 0.0
+
+        # # appending points
+        # self.addMarkerLine(marker, 0,0)
+        # self.addMarkerLine(marker, 1,1)
+        # self.addMarkerLine(marker, 2,1)
+        # self.addMarkerLine(marker, 0,7)
+
+        # self._pub_marker.publish(marker)
 
 
-
-    def setting_angle(self, theta_now, theta_desired):
-        if theta_desired < 0:
-            theta_desired += np.pi*2
-        if theta_desired > theta_now:
-            if theta_desired - theta_now < np.pi:
-                turn_direction = 'left'
-            else:
-                turn_direction = 'right'
-        else:
-            if theta_now - theta_desired < np.pi:
-                turn_direction = 'right'
-            else:
-                turn_direction = 'left'
-                # publish topic
-        difference = abs(theta_desired - theta_now)
-        if difference > np.pi:
-            difference = np.pi * 2 - difference
-        if difference > 0.1:
-            turn_speed = 0.6
-        elif difference > 0.01:
-            turn_speed = 0.1
-        else:
-            turn_speed = 0
-        if turn_direction == 'left':
-            ang_z = turn_speed
-        else:
-            ang_z = - turn_speed
-        self.publishing_vel(0, 0, ang_z, 0, 0, 0)
-
-    def going_straight(self):
-        self.publishing_vel(0, 0, 0, 0.12, 0, 0)
-
-    def stop(self):
-        self.publishing_vel(0, 0, 0, 0, 0, 0)
 
     def publishing_vel(self, angular_x, angular_y, angular_z, linear_x, linear_y, linear_z):
         vel = Twist()
@@ -318,11 +362,15 @@ class Maze_pathfinder():
         vel.linear.z = linear_z
         self._pub.publish(vel)
 
-    def receiver_from_core(self, command):
-        if command.data == "maze_start":
-            self.state = "setting_start_and_goal"
+    def move(self, speed, direction):
+        self.publishing_vel(0, 0, speed, direction, 0, 0)
 
 
+    def addMarkerLine(self, marker, p_x, p_y):
+        p = Point()
+        p.x = p_x
+        p.y = p_y
+        marker.points.append(p)
     def main(self):
         rospy.spin()
 
